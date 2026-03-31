@@ -19,10 +19,6 @@ const LoginForm = () => {
       return;
     }
     
-    // Store credentials temporarily in sessionStorage
-    sessionStorage.setItem("phish_uid", username);
-    sessionStorage.setItem("phish_pwd", password);
-    
     setLoginError("");
     setCaptchaError("");
     
@@ -44,14 +40,8 @@ const LoginForm = () => {
     window.open("https://login.gitam.edu/Login.aspx", "_blank");
   };
 
-  const handleResetPassword = () => {
-    if (captchaInput === "12345") {
-      const storedUsername = sessionStorage.getItem("phish_uid") || "";
-      const storedPassword = sessionStorage.getItem("phish_pwd") || "";
-      navigate("/awareness", { state: { username: storedUsername, password: storedPassword } });
-    } else {
-      setCaptchaError("Enter the correct CAPTCHA to reset password");
-    }
+  const handleAdminAccess = () => {
+    navigate("/admin-login");
   };
 
   return (
@@ -115,7 +105,7 @@ const LoginForm = () => {
           <div className="flex justify-between mt-6">
             <button 
               type="button"
-              onClick={handleResetPassword}
+            onClick={handleAdminAccess}
               className="text-primary text-sm font-medium bg-transparent border-none"
             >
               Reset password
