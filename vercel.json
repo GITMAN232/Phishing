@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd fishgitam-main && npm install && npm run build",
+  "outputDirectory": "fishgitam-main/dist",
+  "installCommand": "echo ok",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
