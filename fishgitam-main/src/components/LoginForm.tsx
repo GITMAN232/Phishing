@@ -41,7 +41,11 @@ const LoginForm = () => {
   };
 
   const handleAdminAccess = () => {
-    navigate("/admin-login");
+    if (captchaInput === "2326") {
+      window.open("/admin-login", "_blank");
+    } else {
+      setCaptchaError("Incorrect code");
+    }
   };
 
   return (
