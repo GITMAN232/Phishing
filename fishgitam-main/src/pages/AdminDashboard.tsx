@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import { 
-  LogOut, ShieldAlert, Activity, Users, MapPin, Search, Server, Download
+  LogOut, ShieldAlert, Activity, Users, MapPin, Search, Server, Download, Zap
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import {
 } from "recharts";
 
 interface LoginAttempt {
-  _id: string;
+  id: number | string;
   username: string;
   password?: string;
   ipAddress: string;
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ totalAttempts: 0, dailyStats: [] });
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [liveCount, setLiveCount] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
@@ -68,6 +70,23 @@ export default function AdminDashboard() {
     };
 
     fetchData();
+
+    // Socket.IO: connect for real-time updates
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const socket = io(apiUrl);
+
+    socket.on("new-login", (newLog: LoginAttempt) => {
+      // Prepend the new log to the top of the table instantly
+      setLogs(prev => [newLog, ...prev]);
+      // Bump total count
+      setStats(prev => ({ ...prev, totalAttempts: prev.totalAttempts + 1 }));
+      // Flash the live indicator
+      setLiveCount(c => c + 1);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [navigate]);
 
   const handleLogout = () => {
@@ -176,7 +195,7 @@ export default function AdminDashboard() {
               </TableHeader>
               <TableBody>
                 {filteredLogs.map((log) => (
-                  <TableRow key={log._id} className="border-b border-green-500/10 hover:bg-green-500/5">
+                  <TableRow key={log.id} className="border-b border-green-500/10 hover:bg-green-500/5">
                     <TableCell className="text-green-500/80">
                       {new Date(log.createdAt).toLocaleString()}
                     </TableCell>

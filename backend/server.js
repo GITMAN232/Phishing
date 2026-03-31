@@ -1,33 +1,50 @@
-require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
+const http = require("http");   // Needed to attach both Express and Socket.IO to same server
+const { Server } = require("socket.io");
 const cors = require("cors");
-const authRoutes = require("./routes/auth");
-const adminRoutes = require("./routes/admin");
+const dotenv = require("dotenv");
+const { getDb } = require("./database");
+
+dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app); // Create raw HTTP server from Express app
+
+// Attach Socket.IO to the same HTTP server, allowing cross-origin from frontend
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+// Make `io` available anywhere in the app via req.app.get("io")
+app.set("io", io);
 
 // Middleware
-app.use(cors());
 app.use(express.json());
-// Expose IP to express from proxies (needed for Render/Vercel)
+app.use(cors());
 app.set('trust proxy', true);
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB connected successfully"))
-.catch(err => console.error("MongoDB connection error:", err));
+// Initialize Database
+getDb()
+    .then(() => console.log("✅ SQLite connected and schema initialized"))
+    .catch(err => console.error("❌ Database connection error:", err));
 
 // Routes
-app.use("/api", authRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api", require("./routes/auth"));
+app.use("/api/admin", require("./routes/admin"));
 
-// Health check
-app.get("/", (req, res) => {
-    res.send("Backend API is running");
+// Socket.IO connection event (useful for debugging)
+io.on("connection", (socket) => {
+    console.log(`🔌 Admin connected: ${socket.id}`);
+    socket.on("disconnect", () => {
+        console.log(`🔌 Admin disconnected: ${socket.id}`);
+    });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+
+httpServer.listen(PORT, () => {
+    console.log(`⚡ Server running on port ${PORT}`);
 });
